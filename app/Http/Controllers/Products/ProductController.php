@@ -17,14 +17,19 @@ class ProductController extends Controller
     public function index(Request $req){
         try {
             $categories = Category::with(['products' => function ($query) use ($req) {
-                // if($req->category_id){
-                //     $query->where('category_id', $req->category_id);
-                // }
                 if ($req->search) {
                     $query->where('name', 'like', '%' . $req->search . '%');
-                }
-                $query->latest();
-            }])->paginate($req->rows);
+                };
+            }]);
+
+            if ($req->search) {
+                $categories->where('name', 'like', '%' . $req->search . '%');
+            }
+
+            if($req->category_id){
+                $categories->where('id', $req->category_id);
+            }
+            $categories = $categories->latest()->paginate($req->rows);
     
             return CommonResource::collection($categories);
 
