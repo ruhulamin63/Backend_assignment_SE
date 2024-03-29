@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\CategoryProduct;
+use App\Models\Category;
 use App\Http\Resources\CommonResource;
 
 class ProductController extends Controller
@@ -15,14 +16,17 @@ class ProductController extends Controller
      */
     public function index(Request $req){
         try {
-            $products = Product::with('user')->latest();
-
-            if($req->search){
-                $products->where('name', 'like', '%' . $req->search . '%');
-            }
-            $products = $products->paginate($req->rows);
-            
-            return CommonResource::collection($products);
+            $categories = Category::with(['products' => function ($query) use ($req) {
+                // if($req->category_id){
+                //     $query->where('category_id', $req->category_id);
+                // }
+                if ($req->search) {
+                    $query->where('name', 'like', '%' . $req->search . '%');
+                }
+                $query->latest();
+            }])->paginate($req->rows);
+    
+            return CommonResource::collection($categories);
 
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -77,7 +81,12 @@ class ProductController extends Controller
      */
     public function show(string $id)
     {
-        //
+        try{
+            $product = Product::find($id);
+            return response()->json($product);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -93,7 +102,37 @@ class ProductController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        try{
+            $product = Product::find($id);
+            if($request->hasFile('image')){
+                $image = $request->file('image');
+                $avatar_image_new_name = hexdec(uniqid()) . '_' . $image->getClientOriginalName();
+                $image->move('uploads/product-image', $avatar_image_new_name);
+                $img = 'uploads/product-image/' . $avatar_image_new_name;
+            } else {
+                $img = $product->image;
+            }
+
+            $product->update([
+                'name' => $request->name,
+                'description' => $request->description,
+                'price' => $request->price,
+                'image' => $img,
+                'user_id' => auth()->user()->id
+            ]);
+            // $product->categories()->sync($request->category_id);
+            CategoryProduct::where('product_id', $id)->update([
+                'category_id' => $request->category_id
+            ]);
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Product updated successfully'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -101,6 +140,15 @@ class ProductController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        try {
+            $product = Product::find($id);
+            $product->delete();
+            return response()->json([
+                'status' => 200,
+                'message' => 'Product deleted successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 }
