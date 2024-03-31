@@ -19,6 +19,8 @@ cp .env.example .env
 
 ```bash
 php artisan migrate:fresh --seed
+or
+php artisan store:data "Electronics" "Smartphone"
 ```
 
 ### Public Access Route

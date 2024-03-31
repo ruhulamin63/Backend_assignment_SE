@@ -24,4 +24,9 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
+
+    //table data store command
+    protected $commands = [
+        Commands\StoreTableData::class,
+    ];
 }
