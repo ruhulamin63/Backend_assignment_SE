@@ -1,4 +1,4 @@
-# Backend_assignment_SE_SoftZino
+# Backend_assignment_SE
 This is test technical test for software engineer position.
 
 I have used  "php": "^8.1", and "laravel/framework": "^10.10",
